@@ -53,7 +53,7 @@ Auth e permissão não se misturam: o Auth Store não avalia `can()`. O Permissi
 
 ```text
 src/
-├── main.ts                              # Pinia, Router, v-permission
+├── main.ts                              # Pinia, Router, v-can
 ├── App.vue                              # shell (sidebar + debugger) se autenticado
 ├── router/index.ts                      # rotas + meta.permissions + beforeEach
 ├── types/vue-router.d.ts                # RouteMeta.permissions / permissionMode
@@ -118,7 +118,7 @@ flowchart TD
     TreeSvc["permission-tree.service.ts"]
     AssignSvc["permission-assignment.service.ts"]
     Hook["usePermission.ts"]
-    Directive["v-permission"]
+    Directive["v-can"]
     Logger["permission.logger.ts"]
   end
 
@@ -346,7 +346,7 @@ Regras de lista vazia (estáveis, cobertas por teste):
 
 No **Service**, `canAll([])` continua `true` (não há requisito). No **Guard**, rota autenticada sem `meta.permissions` (ou com lista vazia) **não** chama o Service: vai para `/403`. Quem precisa só “estar logado” declara uma chave explícita (ex. `dashboard.view`). `/login` e `/403` usam `requiresAuth: false`.
 
-Quem chama: **somente** Guard, `usePermission` e `v-permission`. Páginas não importam o Service.
+Quem chama: **somente** Guard, `usePermission` e `v-can`. Páginas não importam o Service.
 
 ### 4.8 Route Guard — `permissionGuard` / `evaluateRouteAccess`
 
@@ -402,21 +402,21 @@ Quem chama hoje: `AppSidebar` (filtra o menu), `Users.vue` (texto “Somente lei
 
 Não busca API. Não guarda lista própria.
 
-### 4.10 Diretiva — `v-permission`
+### 4.10 Diretiva — `v-can`
 
 **Faz:** a mesma avaliação no template, sem o componente implementar regra.
 
 ```vue
-<button v-permission="'users.create'">Criar usuário</button>
+<button v-can="'users.create'">Criar usuário</button>
 
 <button
-  v-permission="{ permissions: ['users.create', 'users.update'], mode: 'any' }"
+  v-can="{ permissions: ['users.create', 'users.update'], mode: 'any' }"
 >
   Gerenciar usuários
 </button>
 ```
 
-Registrada em `main.ts`: `app.directive('permission', permissionDirective)`.
+Registrada em `main.ts`: `app.directive('can', canDirective)`.
 
 Comportamento:
 
@@ -500,9 +500,9 @@ O Debugger avisa: *“O trace sai no console.”* Não há UI de log.
 | `PermissionDebugger` | troca de perfil (`switchProfile`) + consultas `can` / `canAny` / `canAll` / `check` |
 | `Permissions.vue` | exige rota `permissions.manage`; carrega árvore; `toggleNode`; `saveAssignedPermissions` |
 | `PermissionTree` / `PermissionTreeNode` | checkbox com cascade e estado indeterminado; não avalia `can()` |
-| `Users.vue` | `v-permission` nas ações; hook só para o fallback “Somente leitura”; link Permissões leva `?userId=` |
-| `Dashboard.vue` | lista o array (inspeção) + `v-permission` nas ações PIX |
-| `Reports.vue` / `Settings.vue` | `v-permission` no botão de exportar / editar |
+| `Users.vue` | `v-can` nas ações; hook só para o fallback “Somente leitura”; link Permissões leva `?userId=` |
+| `Dashboard.vue` | lista o array (inspeção) + `v-can` nas ações PIX |
+| `Reports.vue` / `Settings.vue` | `v-can` no botão de exportar / editar |
 | `Forbidden.vue` | página pública do 403; botão “Voltar ao dashboard” (o Guard decide se o dashboard abre) |
 | `App.vue` | shell autenticado; debugger sempre visível para trocar o perfil mesmo no 403 |
 
@@ -558,7 +558,7 @@ Depois do primeiro **Salvar permissões** para um `userId`, o Map substitui esse
 main.ts
   → createPinia()
   → createRouter()                // beforeEach(permissionGuard)
-  → app.directive('permission')
+  → app.directive('can')
   → mount(App)
 
 /  → redirect /dashboard
@@ -610,7 +610,7 @@ AppSidebar can('settings.view') === true
   → permissionGuard
   → PermissionService.check(['settings.view'], 'all')
   → Settings.vue
-  → botão Editar: v-permission="'settings.update'"
+  → botão Editar: v-can="'settings.update'"
 ```
 
 Se o operador colar `/settings` na URL, o item não está no menu, mas o Guard manda para `/403`.
@@ -623,7 +623,7 @@ Não recarrega a página.
 Debugger clica em Visualizador
   → [Auth] switch
   → loginWithProfile('viewer')     // [Auth] login + [Store] load.*
-  → hook e v-permission reagem     // menu e botões mudam
+  → hook e v-can reagem     // menu e botões mudam
   → evaluateRouteAccess(rota atual)
        se estava em /users e viewer não tem users.view
        → [Guard] evaluate.result redirect:forbidden
@@ -684,10 +684,10 @@ Ações *dentro* da página (não são rota):
 
 | Ação | Permissão | Onde |
 | --- | --- | --- |
-| Criar usuário | `users.create` | `v-permission` em `Users.vue` |
-| Editar usuário | `users.update` | `v-permission` em `Users.vue` |
-| Excluir usuário | `users.delete` | `v-permission` + link da rota em `Users.vue` |
-| Abrir atribuição | `permissions.manage` | `v-permission` no link Permissões |
+| Criar usuário | `users.create` | `v-can` em `Users.vue` |
+| Editar usuário | `users.update` | `v-can` em `Users.vue` |
+| Excluir usuário | `users.delete` | `v-can` + link da rota em `Users.vue` |
+| Abrir atribuição | `permissions.manage` | `v-can` no link Permissões |
 | Exportar relatório | `reports.export` | `Reports.vue` |
 | Editar configurações | `settings.update` | `Settings.vue` |
 | Incluir / aprovar PIX, cobrança, PDV | `pix.*` | `Dashboard.vue` |

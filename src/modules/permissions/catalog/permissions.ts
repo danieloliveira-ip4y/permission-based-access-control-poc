@@ -1,6 +1,6 @@
 /**
  * Canonical frontend permission keys (`resource.action`).
- * Route meta, v-permission, usePermission and the tree `key` field must use these literals.
+ * Route meta, v-can, usePermission and the tree `key` field must use these literals.
  */
 export const PERMISSIONS = [
   'dashboard.view',

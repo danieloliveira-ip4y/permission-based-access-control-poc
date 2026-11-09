@@ -56,19 +56,19 @@ const profileLabel = computed(() =>
         logado e elas aparecem aqui na hora.
       </p>
       <div class="page__actions page__actions--after">
-        <button v-permission="'pix.create'" type="button" class="btn btn--secondary">
+        <button v-can="'pix.create'" type="button" class="btn btn--secondary">
           Incluir PIX
         </button>
-        <button v-permission="'pix.approve'" type="button" class="btn btn--primary">
+        <button v-can="'pix.approve'" type="button" class="btn btn--primary">
           Aprovar PIX
         </button>
-        <button v-permission="'pix.charge.create'" type="button" class="btn btn--secondary">
+        <button v-can="'pix.charge.create'" type="button" class="btn btn--secondary">
           Incluir cobrança
         </button>
-        <button v-permission="'pix.charge.cancel'" type="button" class="btn btn--danger">
+        <button v-can="'pix.charge.cancel'" type="button" class="btn btn--danger">
           Cancelar cobrança
         </button>
-        <button v-permission="'pix.pos.view'" type="button" class="btn btn--secondary">
+        <button v-can="'pix.pos.view'" type="button" class="btn btn--secondary">
           Ver ponto de venda
         </button>
       </div>

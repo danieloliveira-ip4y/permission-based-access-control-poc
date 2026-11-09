@@ -2,17 +2,17 @@ import { mount, type VueWrapper } from '@vue/test-utils'
 import { createPinia, getActivePinia, setActivePinia } from 'pinia'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { defineComponent, nextTick } from 'vue'
-import { permissionDirective } from '../directives/permission.directive'
+import { canDirective } from '../directives/permission.directive'
 import { usePermissionStore } from '../stores/permission.store'
 
 const Probe = defineComponent({
   template: `
     <div>
-      <button class="create" v-permission="'users.create'">Criar</button>
-      <button class="delete" v-permission="'users.delete'">Excluir</button>
+      <button class="create" v-can="'users.create'">Criar</button>
+      <button class="delete" v-can="'users.delete'">Excluir</button>
       <button
         class="manage"
-        v-permission="{ permissions: ['users.create', 'users.update'], mode: 'any' }"
+        v-can="{ permissions: ['users.create', 'users.update'], mode: 'any' }"
       >
         Gerenciar
       </button>
@@ -33,7 +33,7 @@ function mountProbe() {
     global: {
       plugins: [pinia],
       directives: {
-        permission: permissionDirective,
+        can: canDirective,
       },
     },
   })
@@ -41,7 +41,7 @@ function mountProbe() {
   return wrapper
 }
 
-describe('v-permission', () => {
+describe('v-can', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })

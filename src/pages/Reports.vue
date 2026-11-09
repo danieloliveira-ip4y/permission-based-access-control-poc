@@ -29,7 +29,7 @@ const reports = [
         <h1>Relatórios</h1>
       </div>
       <button
-        v-permission="'reports.export'"
+        v-can="'reports.export'"
         type="button"
         class="btn btn--primary"
       >

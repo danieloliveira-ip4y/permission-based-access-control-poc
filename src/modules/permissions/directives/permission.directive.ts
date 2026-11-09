@@ -44,7 +44,7 @@ function applyPermissionVisibility(el: HTMLElement, value: PermissionDirectiveVa
   el.setAttribute('aria-hidden', String(!allowed))
 }
 
-export const permissionDirective: Directive<HTMLElement, PermissionDirectiveValue> = {
+export const canDirective: Directive<HTMLElement, PermissionDirectiveValue> = {
   mounted(el, binding) {
     const permissionStore = usePermissionStore()
     const { permissions } = storeToRefs(permissionStore)

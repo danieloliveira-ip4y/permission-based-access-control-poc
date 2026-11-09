@@ -13,7 +13,7 @@ const settings = [
         <p class="eyebrow">Administração</p>
         <h1>Configurações</h1>
       </div>
-      <button v-permission="'settings.update'" type="button" class="btn btn--primary">
+      <button v-can="'settings.update'" type="button" class="btn btn--primary">
         Editar configurações
       </button>
     </header>

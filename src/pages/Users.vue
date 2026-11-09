@@ -15,11 +15,11 @@ const users = mockDirectoryUsers
         <h1>Usuários</h1>
       </div>
       <div class="page__actions">
-        <button v-permission="'users.create'" type="button" class="btn btn--primary">
+        <button v-can="'users.create'" type="button" class="btn btn--primary">
           Criar usuário
         </button>
         <RouterLink
-          v-permission="'users.delete'"
+          v-can="'users.delete'"
           class="btn btn--danger"
           to="/users/delete-example"
         >
@@ -45,17 +45,17 @@ const users = mockDirectoryUsers
             <td>{{ item.role }}</td>
             <td>
               <div class="row-actions">
-                <button v-permission="'users.update'" type="button" class="btn btn--secondary">
+                <button v-can="'users.update'" type="button" class="btn btn--secondary">
                   Editar
                 </button>
                 <RouterLink
-                  v-permission="'permissions.manage'"
+                  v-can="'permissions.manage'"
                   class="btn btn--secondary"
                   :to="{ name: 'permissions', query: { userId: String(item.id) } }"
                 >
                   Permissões
                 </RouterLink>
-                <button v-permission="'users.delete'" type="button" class="btn btn--danger">
+                <button v-can="'users.delete'" type="button" class="btn btn--danger">
                   Excluir
                 </button>
                 <span
