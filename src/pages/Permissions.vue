@@ -135,22 +135,28 @@ watch(
         </p>
       </div>
       <div class="page__actions">
-        <label class="user-select">
-          <span>Usuário</span>
-          <select v-model.number="selectedUserId" :disabled="isLoading || isSaving">
-            <option v-for="user in users" :key="user.id" :value="user.id">
-              {{ user.name }} · {{ user.role }}
-            </option>
-          </select>
-        </label>
-        <button
-          type="button"
-          class="btn btn--primary"
-          :disabled="isLoading || isSaving"
-          @click="handleSave"
-        >
-          {{ isSaving ? 'Salvando...' : 'Salvar permissões' }}
-        </button>
+        <div class="user-select">
+          <label class="user-select__label" for="permission-user">Usuário</label>
+          <div class="user-select__row">
+            <select
+              id="permission-user"
+              v-model.number="selectedUserId"
+              :disabled="isLoading || isSaving"
+            >
+              <option v-for="user in users" :key="user.id" :value="user.id">
+                {{ user.name }} · {{ user.role }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="btn btn--primary"
+              :disabled="isLoading || isSaving"
+              @click="handleSave"
+            >
+              {{ isSaving ? 'Salvando...' : 'Salvar permissões' }}
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
