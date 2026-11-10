@@ -51,45 +51,51 @@ describe('v-can', () => {
     wrapper = null
   })
 
-  it('shows an element when the user is authorized', async () => {
+  it('keeps an authorized element in the DOM', async () => {
     const store = usePermissionStore()
     store.updatePermissions(['users.create'])
 
     const view = mountProbe()
     await nextTick()
 
-    expect(view.get('.create').isVisible()).toBe(true)
-    expect(view.get('.delete').isVisible()).toBe(false)
+    expect(view.find('.create').exists()).toBe(true)
+    expect(view.find('.delete').exists()).toBe(false)
+    expect(document.querySelector('.delete')).toBeNull()
   })
 
-  it('hides an element when the user is not authorized', async () => {
+  it('removes unauthorized elements from the DOM', async () => {
     const store = usePermissionStore()
     store.updatePermissions(['reports.view'])
 
     const view = mountProbe()
     await nextTick()
 
-    expect(view.get('.create').isVisible()).toBe(false)
-    expect(view.get('.delete').isVisible()).toBe(false)
-    expect(view.get('.manage').isVisible()).toBe(false)
+    expect(view.find('.create').exists()).toBe(false)
+    expect(view.find('.delete').exists()).toBe(false)
+    expect(view.find('.manage').exists()).toBe(false)
+    expect(document.querySelector('.create')).toBeNull()
+    expect(document.querySelector('.delete')).toBeNull()
+    expect(document.querySelector('.manage')).toBeNull()
   })
 
-  it('updates visibility after a profile-like permission change', async () => {
+  it('restores and removes nodes after a profile-like permission change', async () => {
     const store = usePermissionStore()
     store.updatePermissions(['users.create', 'users.update'])
 
     const view = mountProbe()
     await nextTick()
 
-    expect(view.get('.create').isVisible()).toBe(true)
-    expect(view.get('.delete').isVisible()).toBe(false)
-    expect(view.get('.manage').isVisible()).toBe(true)
+    expect(view.find('.create').exists()).toBe(true)
+    expect(view.find('.delete').exists()).toBe(false)
+    expect(view.find('.manage').exists()).toBe(true)
 
     store.updatePermissions(['users.delete'])
     await nextTick()
 
-    expect(view.get('.create').isVisible()).toBe(false)
-    expect(view.get('.delete').isVisible()).toBe(true)
-    expect(view.get('.manage').isVisible()).toBe(false)
+    expect(view.find('.create').exists()).toBe(false)
+    expect(view.find('.delete').exists()).toBe(true)
+    expect(view.find('.manage').exists()).toBe(false)
+    expect(document.querySelector('.create')).toBeNull()
+    expect(document.querySelector('.delete')).not.toBeNull()
   })
 })

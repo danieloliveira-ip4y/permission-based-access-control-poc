@@ -4,7 +4,6 @@ import { RouterLink, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { logout } from '@/modules/auth/services/auth.service'
 import { useAuthStore } from '@/modules/auth/stores/auth.store'
-import { usePermission } from '@/modules/permissions/hooks/usePermission'
 import { profileLabels } from '@/mocks/user.mock'
 import type { Permission } from '@/modules/permissions/types/permission.types'
 
@@ -25,9 +24,7 @@ const navItems: NavItem[] = [
 const router = useRouter()
 const authStore = useAuthStore()
 const { user, currentProfile } = storeToRefs(authStore)
-const { can } = usePermission()
 
-const visibleItems = computed(() => navItems.filter((item) => can(item.permission)))
 const profileLabel = computed(() =>
   currentProfile.value ? profileLabels[currentProfile.value] : '—',
 )
@@ -62,8 +59,9 @@ async function handleLogout() {
 
     <nav class="sidebar__nav">
       <RouterLink
-        v-for="item in visibleItems"
+        v-for="item in navItems"
         :key="item.to"
+        v-can="item.permission"
         :to="item.to"
         class="sidebar__link"
         exact-active-class="is-active"

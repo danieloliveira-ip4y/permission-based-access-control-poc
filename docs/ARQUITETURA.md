@@ -139,7 +139,7 @@ flowchart TD
 
   LoginPage --> AuthService
   Sidebar --> AuthService
-  Sidebar --> Hook
+  Sidebar --> Directive
   Debugger --> AuthService
   Debugger --> Hook
   Pages --> Directive
@@ -396,9 +396,9 @@ const { can, canAny, canAll, check, isLoading, isLoaded, error } = usePermission
 can('users.delete')
 ```
 
-Por dentro: `computed(() => createPermissionService(permissions.value))`. Quando a lista muda, o Service é recriado e a sidebar some/aparece na hora.
+Por dentro: `computed(() => createPermissionService(permissions.value))`. Quando a lista muda, o Service é recriado.
 
-Quem chama hoje: `AppSidebar` (filtra o menu), `Users.vue` (texto “Somente leitura”), `PermissionDebugger` (consultas).
+Quem chama hoje: `Users.vue` (texto invertido “Somente leitura”), `PermissionDebugger` (consultas). Esconder ação ou link na UI é papel do `v-can`, não do hook.
 
 Não busca API. Não guarda lista própria.
 
@@ -420,15 +420,20 @@ Registrada em `main.ts`: `app.directive('can', canDirective)`.
 
 Comportamento:
 
-1. `mounted` — guarda o `display` inline original, observa `permissionStore.permissions`, avalia.
-2. Autorizado → restaura o display original (string vazia = o CSS da classe vale, ex. `inline-flex` do `.btn`).
-3. Negado → `display: none` + `aria-hidden="true"`. O elemento **permanece no DOM** para poder reaparecer na troca de perfil.
+1. `mounted` — observa `permissionStore.permissions`, avalia, coloca um comentário âncora.
+2. Autorizado → o elemento fica (ou volta) no DOM.
+3. Negado → o elemento **sai do DOM**; o comentário segura o lugar para a troca de perfil reinserir.
 4. `updated` — reavalia se o binding mudou.
-5. `unmounted` — para o `watch`.
+5. `unmounted` — para o `watch` e remove o comentário.
 
-Não remove o nó. Não consulta API. Não usa o hook (a diretiva não pode chamar `usePermission` fora de `setup`; ela lê o store direto e cria o Service).
+Não consulta API. Não usa o hook (a diretiva não pode chamar `usePermission` fora de `setup`; ela lê o store direto e cria o Service). Remover do DOM evita o botão no Inspecionar; continua sendo UX. O Guard (e o Laravel) são a defesa.
 
-Quem usa: `Users.vue`, `Reports.vue`, `Settings.vue`, `Dashboard.vue` (ações PIX).
+Convenção da camada de UI:
+
+- Esconder ação, link ou item de menu → `v-can`
+- Consulta / texto invertido (não tem `v-can.not`) → `usePermission`
+
+Quem usa `v-can`: `AppSidebar.vue`, `Users.vue`, `Reports.vue`, `Settings.vue`, `Dashboard.vue` (ações PIX).
 
 ### 4.11 Tree Service — `permission-tree.service.ts`
 
@@ -496,7 +501,7 @@ O Debugger avisa: *“O trace sai no console.”* Não há UI de log.
 
 | Peça | Como usa |
 | --- | --- |
-| `AppSidebar` | `usePermission().can` filtra o menu. Logout chama Auth Service. |
+| `AppSidebar` | `v-can` em cada item do menu. Logout chama Auth Service. |
 | `PermissionDebugger` | troca de perfil (`switchProfile`) + consultas `can` / `canAny` / `canAll` / `check` |
 | `Permissions.vue` | exige rota `permissions.manage`; carrega árvore; `toggleNode`; `saveAssignedPermissions` |
 | `PermissionTree` / `PermissionTreeNode` | checkbox com cascade e estado indeterminado; não avalia `can()` |
@@ -602,10 +607,10 @@ sequenceDiagram
 
 ### 6.3 Clique num link da sidebar
 
-A sidebar já filtrou com `can('settings.view')`. O Guard roda de novo: a UI não é a defesa.
+A sidebar já tirou o link com `v-can="'settings.view'"`. O Guard roda de novo: a UI não é a defesa.
 
 ```text
-AppSidebar can('settings.view') === true
+AppSidebar v-can="'settings.view'"
   → RouterLink /settings
   → permissionGuard
   → PermissionService.check(['settings.view'], 'all')
@@ -623,7 +628,7 @@ Não recarrega a página.
 Debugger clica em Visualizador
   → [Auth] switch
   → loginWithProfile('viewer')     // [Auth] login + [Store] load.*
-  → hook e v-can reagem     // menu e botões mudam
+  → v-can reage              // menu e botões saem/voltam no DOM
   → evaluateRouteAccess(rota atual)
        se estava em /users e viewer não tem users.view
        → [Guard] evaluate.result redirect:forbidden
@@ -688,11 +693,11 @@ Ações *dentro* da página (não são rota):
 | Editar usuário | `users.update` | `v-can` em `Users.vue` |
 | Excluir usuário | `users.delete` | `v-can` + link da rota em `Users.vue` |
 | Abrir atribuição | `permissions.manage` | `v-can` no link Permissões |
-| Exportar relatório | `reports.export` | `Reports.vue` |
-| Editar configurações | `settings.update` | `Settings.vue` |
-| Incluir / aprovar PIX, cobrança, PDV | `pix.*` | `Dashboard.vue` |
+| Exportar relatório | `reports.export` | `v-can` em `Reports.vue` |
+| Editar configurações | `settings.update` | `v-can` em `Settings.vue` |
+| Incluir / aprovar PIX, cobrança, PDV | `pix.*` | `v-can` em `Dashboard.vue` |
 
-Menu da sidebar usa as mesmas chaves de rota (`dashboard.view`, `users.view`, `reports.view`, `settings.view`, `permissions.manage`).
+Menu da sidebar: as mesmas chaves de rota, cada uma com `v-can`. `/users/delete-example` só tem Guard na rota (`users.delete`); os botões da página não repetem a diretiva.
 
 ---
 
@@ -752,9 +757,9 @@ Isso é o que mantém o desenho testável e plugável no Laravel:
 | Permission Service | importar Vue, Pinia, Router, mocks, HTTP, logger |
 | Tree Service | importar Vue / Pinia / HTTP |
 | Permission Store | implementar `can` / `canAny` / `canAll` |
-| Páginas | ler `permissionStore.permissions` para decidir botão (exceto listar no Dashboard/Debugger) |
+| Páginas | ler `permissionStore.permissions` ou o hook para esconder botão (exceto listar no Dashboard/Debugger e o texto invertido em Users) |
 | Guard | copiar a lógica do Service; só chama `check`. Não liberar rota autenticada sem `meta.permissions` |
-| Hook / diretiva | buscar API; só leem o Store e perguntam ao Service |
+| Hook / diretiva | buscar API; só leem o Store e perguntam ao Service. Esconder ação na UI é `v-can` |
 | Logger | entrar no Service |
 | `localStorage` | ser fonte de verdade das permissões |
 | `permission:{id}` | existir como chave; grantable sem `key` é erro |

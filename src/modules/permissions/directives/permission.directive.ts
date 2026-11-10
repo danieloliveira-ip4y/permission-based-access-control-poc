@@ -11,7 +11,7 @@ import type {
 interface DirectiveState {
   stop: WatchStopHandle
   value: PermissionDirectiveValue
-  originalDisplay: string
+  placeholder: Comment
 }
 
 const stateByElement = new WeakMap<HTMLElement, DirectiveState>()
@@ -34,14 +34,33 @@ function normalizeBinding(value: PermissionDirectiveValue): {
   }
 }
 
-function applyPermissionVisibility(el: HTMLElement, value: PermissionDirectiveValue): void {
+function isAllowed(value: PermissionDirectiveValue): boolean {
   const permissionStore = usePermissionStore()
   const { permissions, mode } = normalizeBinding(value)
-  const allowed = createPermissionService(permissionStore.permissions).check(permissions, mode)
-  const originalDisplay = stateByElement.get(el)?.originalDisplay ?? ''
+  return createPermissionService(permissionStore.permissions).check(permissions, mode)
+}
 
-  el.style.display = allowed ? originalDisplay : 'none'
-  el.setAttribute('aria-hidden', String(!allowed))
+function syncElementPresence(el: HTMLElement, value: PermissionDirectiveValue): void {
+  const state = stateByElement.get(el)
+  if (!state) {
+    return
+  }
+
+  const { placeholder } = state
+  const allowed = isAllowed(value)
+
+  if (allowed) {
+    if (!el.isConnected && placeholder.parentNode) {
+      placeholder.parentNode.insertBefore(el, placeholder)
+      placeholder.remove()
+    }
+    return
+  }
+
+  if (el.parentNode) {
+    el.parentNode.insertBefore(placeholder, el)
+    el.remove()
+  }
 }
 
 export const canDirective: Directive<HTMLElement, PermissionDirectiveValue> = {
@@ -56,7 +75,7 @@ export const canDirective: Directive<HTMLElement, PermissionDirectiveValue> = {
         if (!current) {
           return
         }
-        applyPermissionVisibility(el, current.value)
+        syncElementPresence(el, current.value)
       },
       { deep: true },
     )
@@ -64,9 +83,9 @@ export const canDirective: Directive<HTMLElement, PermissionDirectiveValue> = {
     stateByElement.set(el, {
       stop,
       value: binding.value,
-      originalDisplay: el.style.display,
+      placeholder: document.createComment('v-can'),
     })
-    applyPermissionVisibility(el, binding.value)
+    syncElementPresence(el, binding.value)
   },
 
   updated(el, binding) {
@@ -74,11 +93,13 @@ export const canDirective: Directive<HTMLElement, PermissionDirectiveValue> = {
     if (current) {
       current.value = binding.value
     }
-    applyPermissionVisibility(el, binding.value)
+    syncElementPresence(el, binding.value)
   },
 
   unmounted(el) {
-    stateByElement.get(el)?.stop()
+    const current = stateByElement.get(el)
+    current?.stop()
+    current?.placeholder.remove()
     stateByElement.delete(el)
   },
 }
