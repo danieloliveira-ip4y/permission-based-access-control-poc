@@ -1,12 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  buildDefaultPermissionTree,
-  resetPermissionAssignments,
-} from '@/mocks/permission-tree.mock'
+import { resetPermissionAssignments } from '@/mocks/permission-tree.mock'
 import { permissionsByProfile } from '@/mocks/permissions.mock'
 import * as permissionClient from '../api/permission.client'
-import { collectAssignedKeys } from '../services/permission-tree.service'
 import { usePermissionStore } from '../stores/permission.store'
 
 describe('PermissionStore', () => {
@@ -21,8 +17,7 @@ describe('PermissionStore', () => {
 
     await store.loadPermissions('admin')
 
-    expect(store.permissions).toEqual(collectAssignedKeys(buildDefaultPermissionTree('admin')))
-    expect(store.permissions).toEqual(expect.arrayContaining(permissionsByProfile.admin))
+    expect(store.permissions).toEqual(permissionsByProfile.admin)
     expect(store.isLoaded).toBe(true)
     expect(store.isLoading).toBe(false)
     expect(store.error).toBeNull()
@@ -39,8 +34,7 @@ describe('PermissionStore', () => {
 
     expect(store.isLoading).toBe(false)
     expect(store.isLoaded).toBe(true)
-    expect(store.permissions).toEqual(collectAssignedKeys(buildDefaultPermissionTree('operator')))
-    expect(store.permissions).toEqual(expect.arrayContaining(permissionsByProfile.operator))
+    expect(store.permissions).toEqual(permissionsByProfile.operator)
   })
 
   it('updates permissions without a reload', () => {

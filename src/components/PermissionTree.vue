@@ -8,12 +8,12 @@ import type { PermissionNode } from '@/modules/permissions/types/permission.type
 
 defineProps<{
   nodes: PermissionNode[]
-  expandedIds: Set<number>
+  expandedIds: Set<string>
 }>()
 
 const emit = defineEmits<{
   toggle: [node: PermissionNode]
-  toggleExpand: [id: number]
+  toggleExpand: [uuid: string]
 }>()
 
 function totals(nodes: PermissionNode[]) {
@@ -36,7 +36,7 @@ function totals(nodes: PermissionNode[]) {
     <ul class="ptree-root">
       <PermissionTreeNode
         v-for="node in nodes"
-        :key="node.id"
+        :key="node.uuid"
         :node="node"
         :expanded-ids="expandedIds"
         @toggle="emit('toggle', $event)"

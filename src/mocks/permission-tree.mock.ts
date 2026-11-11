@@ -3,7 +3,6 @@ import {
   applyGrantedKeys,
   cloneTree,
   collectAssignedKeys,
-  setAssignedCascade,
 } from '@/modules/permissions/services/permission-tree.service'
 import type {
   PermissionNode,
@@ -12,213 +11,117 @@ import type {
 } from '@/modules/permissions/types/permission.types'
 import { permissionsByProfile } from './permissions.mock'
 
-export const pixPermissionTree: PermissionNode[] = [
+/**
+ * Catálogo mock alinhado ao contrato Laravel (uuid + flags).
+ * `key` é só da PoC para amarrar o nó à string do frontend.
+ */
+export const salaryAdvancePermissionTree: PermissionNode[] = [
   {
-    id: 1,
-    description: 'PIX',
+    uuid: '6e2970c2-8f5b-431f-a101-63f58767f55a',
+    description: 'Antecipação Salarial',
     children: [
       {
-        id: 2,
-        description: 'Incluir',
-        assigned: false,
-        key: 'pix.create',
-        children: [],
+        uuid: '6e2970c2-8f5b-431f-a101-63f58767f51a',
+        description: 'Financeira',
+        children: [
+          {
+            uuid: '6e2970c2-8f5b-431f-a101-63f58767f52a',
+            description: 'Listar Financeiras',
+            assigned: true,
+            isCritial: false,
+            isVisible: false,
+            isDefault: false,
+            key: 'financeiras.list',
+            children: [
+              {
+                uuid: '6e2970c2-8f5b-431f-a101-63f58767f53a',
+                description: 'Adicionar Financeiras',
+                assigned: true,
+                isCritial: false,
+                isVisible: false,
+                isDefault: false,
+                key: 'financeiras.create',
+                children: [],
+              },
+              {
+                uuid: '6e2970c2-8f5b-431f-a101-63f58767f54a',
+                description: 'Atualizar Comissão',
+                assigned: true,
+                isCritial: false,
+                isVisible: false,
+                isDefault: false,
+                key: 'financeiras.commission.update',
+                children: [],
+              },
+              {
+                uuid: '6e2970c2-8f5b-431f-a101-63f58767f56a',
+                description: 'Definir Conta Movimento',
+                assigned: true,
+                isCritial: false,
+                isVisible: false,
+                isDefault: false,
+                key: 'financeiras.account.movement.set',
+                children: [],
+              },
+              {
+                uuid: '6e2970c2-8f5b-431f-a101-63f58767f57a',
+                description: 'Definir Conta Desembolso',
+                assigned: true,
+                isCritial: false,
+                isVisible: false,
+                isDefault: false,
+                key: 'financeiras.account.disbursement.set',
+                children: [],
+              },
+              {
+                uuid: '6e2970c2-8f5b-431f-a101-63f58767f58a',
+                description: 'Definir Limites Automáticos',
+                assigned: true,
+                isCritial: false,
+                isVisible: false,
+                isDefault: false,
+                key: 'financeiras.limits.auto.set',
+                children: [],
+              },
+            ],
+          },
+          {
+            uuid: '6e2970c2-8f5b-431f-a101-63f58767f59a',
+            description: 'Procurar Financeira',
+            assigned: true,
+            isCritial: false,
+            isVisible: false,
+            isDefault: false,
+            key: 'financeiras.search',
+            children: [],
+          },
+          {
+            uuid: '6e2970c2-8f5b-431f-a101-63f58767f5aa',
+            description: 'Listar Modalidade',
+            assigned: true,
+            isCritial: false,
+            isVisible: false,
+            isDefault: false,
+            key: 'modalidades.list',
+            children: [],
+          },
+        ],
       },
       {
-        id: 3,
-        description: 'Aprovar',
+        uuid: '6e2970c2-8f5b-431f-a101-63f58767f5ba',
+        description: 'Analisar Antecipação (exemplo)',
         assigned: true,
-        key: 'pix.approve',
+        isCritial: false,
+        isVisible: false,
+        isDefault: false,
+        key: 'antecipacao.analyze',
         children: [],
-      },
-      {
-        id: 4,
-        description: 'Receber',
-        children: [
-          {
-            id: 5,
-            description: 'Incluir Cobrança Pix',
-            assigned: true,
-            key: 'pix.charge.create',
-            children: [],
-          },
-          {
-            id: 6,
-            description: 'Cancelar Cobrança Pix',
-            assigned: false,
-            key: 'pix.charge.cancel',
-            children: [],
-          },
-        ],
-      },
-      {
-        id: 7,
-        description: 'Comprovante',
-        children: [
-          {
-            id: 8,
-            description: 'Visualizar',
-            assigned: false,
-            key: 'pix.receipt.view',
-            children: [],
-          },
-        ],
-      },
-      {
-        id: 9,
-        description: 'Ponto de Venda',
-        children: [
-          {
-            id: 10,
-            description: 'Visualizar',
-            assigned: true,
-            key: 'pix.pos.view',
-            children: [
-              {
-                id: 11,
-                description: 'Criar',
-                assigned: false,
-                key: 'pix.pos.create',
-                children: [],
-              },
-              {
-                id: 12,
-                description: 'Excluir',
-                assigned: false,
-                key: 'pix.pos.delete',
-                children: [],
-              },
-              {
-                id: 13,
-                description: 'Download QrCode',
-                assigned: false,
-                key: 'pix.pos.qrcode.download',
-                children: [],
-              },
-              {
-                id: 14,
-                description: 'Visualizar Movimentação',
-                assigned: false,
-                key: 'pix.pos.movement.view',
-                children: [],
-              },
-            ],
-          },
-          {
-            id: 15,
-            description: 'Comunicação',
-            children: [
-              {
-                id: 16,
-                description: 'Visualizar Whatsapp',
-                assigned: false,
-                key: 'pix.whatsapp.view',
-                children: [
-                  {
-                    id: 17,
-                    description: 'Cadastrar Whatsapp',
-                    assigned: false,
-                    key: 'pix.whatsapp.create',
-                    children: [],
-                  },
-                  {
-                    id: 18,
-                    description: 'Excluir Whatsapp',
-                    assigned: false,
-                    key: 'pix.whatsapp.delete',
-                    children: [],
-                  },
-                ],
-              },
-              {
-                id: 19,
-                description: 'Visualizar E-Mail',
-                assigned: false,
-                key: 'pix.email.view',
-                children: [
-                  {
-                    id: 20,
-                    description: 'Cadastrar E-Mail',
-                    assigned: false,
-                    key: 'pix.email.create',
-                    children: [],
-                  },
-                  {
-                    id: 21,
-                    description: 'Excluir E-Mail',
-                    assigned: false,
-                    key: 'pix.email.delete',
-                    children: [],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
       },
     ],
   },
 ]
 
-export const systemPermissionTree: PermissionNode[] = [
-  {
-    id: 100,
-    description: 'Sistema',
-    children: [
-      {
-        id: 101,
-        description: 'Dashboard',
-        assigned: false,
-        key: 'dashboard.view',
-        children: [],
-      },
-      {
-        id: 102,
-        description: 'Usuários',
-        children: [
-          { id: 103, description: 'Visualizar', assigned: false, key: 'users.view', children: [] },
-          { id: 104, description: 'Criar', assigned: false, key: 'users.create', children: [] },
-          { id: 105, description: 'Editar', assigned: false, key: 'users.update', children: [] },
-          { id: 106, description: 'Excluir', assigned: false, key: 'users.delete', children: [] },
-        ],
-      },
-      {
-        id: 107,
-        description: 'Relatórios',
-        children: [
-          { id: 108, description: 'Visualizar', assigned: false, key: 'reports.view', children: [] },
-          { id: 109, description: 'Exportar', assigned: false, key: 'reports.export', children: [] },
-        ],
-      },
-      {
-        id: 110,
-        description: 'Configurações',
-        children: [
-          { id: 111, description: 'Visualizar', assigned: false, key: 'settings.view', children: [] },
-          { id: 112, description: 'Editar', assigned: false, key: 'settings.update', children: [] },
-        ],
-      },
-      {
-        id: 113,
-        description: 'Permissões',
-        children: [
-          {
-            id: 114,
-            description: 'Gerenciar atribuições',
-            assigned: false,
-            key: 'permissions.manage',
-            children: [],
-          },
-        ],
-      },
-    ],
-  },
-]
-
-export const permissionCatalog: PermissionNode[] = [
-  ...cloneTree(systemPermissionTree),
-  ...cloneTree(pixPermissionTree),
-]
+export const permissionCatalog: PermissionNode[] = cloneTree(salaryAdvancePermissionTree)
 
 const assignmentsByUserId = new Map<number, PermissionNode[]>()
 
@@ -236,14 +139,6 @@ export function buildDefaultPermissionTree(profile: UserProfile): PermissionNode
   const tree = cloneTree(permissionCatalog)
   const granted = new Set(permissionsByProfile[profile] ?? [])
   applyGrantedKeys(tree, granted)
-
-  if (profile !== 'admin') {
-    const pixRoot = tree.find((node) => node.id === 1)
-    if (pixRoot) {
-      setAssignedCascade(pixRoot, false)
-    }
-  }
-
   return tree
 }
 

@@ -142,12 +142,13 @@ describe('permissionLogger', () => {
     permissionLogger.reset()
 
     const tree = buildDefaultPermissionTree('admin')
-    const pix = tree.find((node) => node.id === 1)
-    const incluir = pix?.children.find((node) => node.id === 2)
-    if (!incluir) {
-      throw new Error('PIX / Incluir not found')
+    const analisar = tree[0]?.children.find(
+      (node) => node.description === 'Analisar Antecipação (exemplo)',
+    )
+    if (!analisar) {
+      throw new Error('Analisar Antecipação not found')
     }
-    toggleNode(incluir)
+    toggleNode(analisar)
 
     await saveAssignedPermissions(1, tree, router)
 

@@ -30,7 +30,7 @@ function initialUserId(): number {
 
 const selectedUserId = ref(initialUserId())
 const tree = ref<PermissionNode[]>([])
-const expandedIds = ref<Set<number>>(new Set())
+const expandedIds = ref<Set<string>>(new Set())
 const isLoading = ref(false)
 const isSaving = ref(false)
 const errorMessage = ref<string | null>(null)
@@ -45,10 +45,10 @@ const assignedNodes = computed(() => collectAssigned(tree.value))
 const savePayload = computed(() => toSavePayload(tree.value))
 const isCurrentUser = computed(() => authStore.user?.id === selectedUserId.value)
 
-function collectExpandableIds(nodes: PermissionNode[], acc: Set<number>): void {
+function collectExpandableIds(nodes: PermissionNode[], acc: Set<string>): void {
   for (const node of nodes) {
     if (node.children.length > 0) {
-      acc.add(node.id)
+      acc.add(node.uuid)
       collectExpandableIds(node.children, acc)
     }
   }
@@ -67,7 +67,7 @@ async function loadTree(userId: number): Promise<void> {
   try {
     const nextTree = await fetchPermissionsTree(userId, profileFromRole(user.role))
     tree.value = nextTree
-    const expanded = new Set<number>()
+    const expanded = new Set<string>()
     collectExpandableIds(nextTree, expanded)
     expandedIds.value = expanded
   } catch (reason) {
@@ -83,12 +83,12 @@ function handleToggle(node: PermissionNode): void {
   saveMessage.value = null
 }
 
-function handleToggleExpand(id: number): void {
+function handleToggleExpand(uuid: string): void {
   const next = new Set(expandedIds.value)
-  if (next.has(id)) {
-    next.delete(id)
+  if (next.has(uuid)) {
+    next.delete(uuid)
   } else {
-    next.add(id)
+    next.add(uuid)
   }
   expandedIds.value = next
 }
@@ -131,7 +131,7 @@ watch(
         <h1>Permissões</h1>
         <p class="muted">
           Quem tem <code>permissions.manage</code> atribui o catálogo ao usuário. Grupos não geram
-          permissão; só folhas (e nós com <code>assigned</code>) entram no payload.
+          permissão; só nós com <code>assigned</code> entram no payload.
         </p>
       </div>
       <div class="page__actions">
@@ -174,11 +174,12 @@ watch(
 
       <aside class="permissions-aside">
         <article class="hint-card">
-          <h3>Id da permissão</h3>
+          <h3>UUID da permissão</h3>
           <p>
-            Cada permissão gravável tem um <strong>id</strong> na tabela e uma
-            <strong>chave</strong> no frontend (<code>pix.approve</code>,
-            <code>users.view</code>). Grupo sem <code>assigned</code> não é linha gravável.
+            Cada permissão gravável tem um <strong>uuid</strong> no backend e uma
+            <strong>chave</strong> no frontend (<code>financeiras.list</code>,
+            <code>antecipacao.analyze</code>). Grupo sem <code>assigned</code> não é linha
+            gravável.
           </p>
         </article>
 
@@ -194,8 +195,8 @@ watch(
           </header>
           <p v-if="assignedNodes.length === 0" class="muted">Nenhuma permissão marcada.</p>
           <ul v-else class="save-list">
-            <li v-for="node in assignedNodes" :key="node.id">
-              <code>{{ node.id }}</code>
+            <li v-for="node in assignedNodes" :key="node.uuid">
+              <code>{{ node.uuid }}</code>
               <span>{{ node.description }}</span>
               <small>{{ nodePermissionKey(node) }}</small>
             </li>

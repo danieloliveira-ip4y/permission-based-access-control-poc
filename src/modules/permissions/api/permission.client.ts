@@ -3,6 +3,8 @@ import {
   persistUserPermissionTree,
   profileUserId,
 } from '@/mocks/permission-tree.mock'
+import { permissionsByProfile } from '@/mocks/permissions.mock'
+import { retainKnownPermissions } from '../catalog/permissions'
 import { collectAssignedKeys } from '../services/permission-tree.service'
 import type {
   PermissionNode,
@@ -24,7 +26,12 @@ export async function fetchCurrentUserPermissions(
 ): Promise<PermissionsResponse> {
   const userId = profileUserId(profile)
   const tree = await fetchUserPermissionTree(userId, profile)
-  return { permissions: collectAssignedKeys(tree) }
+  const treeKeys = collectAssignedKeys(tree)
+  // Demo screens still use dashboard/users/… while the tree catalog is Antecipação.
+  const profileKeys = permissionsByProfile[profile] ?? []
+  return {
+    permissions: retainKnownPermissions([...new Set([...profileKeys, ...treeKeys])]),
+  }
 }
 
 export function fetchPermissionsTree(

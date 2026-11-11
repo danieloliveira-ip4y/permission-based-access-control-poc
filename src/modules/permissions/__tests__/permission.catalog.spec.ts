@@ -4,22 +4,21 @@ import { PERMISSIONS, isPermission, retainKnownPermissions } from '../catalog/pe
 import { collectAssignable, nodePermissionKey } from '../services/permission-tree.service'
 
 describe('permission catalog', () => {
-  it('lists the same keys as grantable nodes in the tree', () => {
-    const fromTree = collectAssignable(permissionCatalog)
-      .map(nodePermissionKey)
-      .sort()
-    const fromCatalog = [...PERMISSIONS].sort()
+  it('exposes a key for every grantable node in the tree', () => {
+    const fromTree = collectAssignable(permissionCatalog).map(nodePermissionKey)
 
-    expect(fromTree).toEqual(fromCatalog)
     expect(new Set(PERMISSIONS).size).toBe(PERMISSIONS.length)
+    for (const key of fromTree) {
+      expect(PERMISSIONS).toContain(key)
+    }
   })
 
   it('keeps only known permission strings', () => {
     expect(isPermission('users.view')).toBe(true)
+    expect(isPermission('financeiras.list')).toBe(true)
     expect(isPermission('users.veiw')).toBe(false)
-    expect(retainKnownPermissions(['users.view', 'users.veiw', 'pix.approve'])).toEqual([
-      'users.view',
-      'pix.approve',
-    ])
+    expect(
+      retainKnownPermissions(['users.view', 'users.veiw', 'financeiras.list', 'pix.approve']),
+    ).toEqual(['users.view', 'financeiras.list'])
   })
 })

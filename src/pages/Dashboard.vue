@@ -50,26 +50,26 @@ const profileLabel = computed(() =>
     </article>
 
     <article class="panel">
-      <h2>Ações PIX</h2>
+      <h2>Ações — Antecipação Salarial</h2>
       <p class="muted">
-        Estas ações usam as chaves da árvore PIX. Marque-as em Permissões, salve para o usuário
-        logado e elas aparecem aqui na hora.
+        Estas ações usam as chaves da árvore de Antecipação. Marque-as em Permissões, salve para o
+        usuário logado e elas aparecem aqui na hora.
       </p>
       <div class="page__actions page__actions--after">
-        <button v-can="'pix.create'" type="button" class="btn btn--secondary">
-          Incluir PIX
+        <button v-can="'financeiras.list'" type="button" class="btn btn--secondary">
+          Listar financeiras
         </button>
-        <button v-can="'pix.approve'" type="button" class="btn btn--primary">
-          Aprovar PIX
+        <button v-can="'financeiras.create'" type="button" class="btn btn--primary">
+          Adicionar financeira
         </button>
-        <button v-can="'pix.charge.create'" type="button" class="btn btn--secondary">
-          Incluir cobrança
+        <button v-can="'financeiras.search'" type="button" class="btn btn--secondary">
+          Procurar financeira
         </button>
-        <button v-can="'pix.charge.cancel'" type="button" class="btn btn--danger">
-          Cancelar cobrança
+        <button v-can="'modalidades.list'" type="button" class="btn btn--secondary">
+          Listar modalidades
         </button>
-        <button v-can="'pix.pos.view'" type="button" class="btn btn--secondary">
-          Ver ponto de venda
+        <button v-can="'antecipacao.analyze'" type="button" class="btn btn--secondary">
+          Analisar antecipação
         </button>
       </div>
     </article>

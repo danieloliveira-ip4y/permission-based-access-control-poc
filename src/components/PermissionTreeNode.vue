@@ -11,17 +11,17 @@ import type { PermissionNode } from '@/modules/permissions/types/permission.type
 
 const props = defineProps<{
   node: PermissionNode
-  expandedIds: Set<number>
+  expandedIds: Set<string>
 }>()
 
 const emit = defineEmits<{
   toggle: [node: PermissionNode]
-  toggleExpand: [id: number]
+  toggleExpand: [uuid: string]
 }>()
 
 const checkboxRef = ref<HTMLInputElement | null>(null)
 const hasChildren = computed(() => props.node.children.length > 0)
-const expanded = computed(() => props.expandedIds.has(props.node.id))
+const expanded = computed(() => props.expandedIds.has(props.node.uuid))
 const checkState = computed(() => nodeCheckState(props.node))
 const assignedCount = computed(() => countAssigned(props.node))
 const totalCount = computed(() => countAssignable(props.node))
@@ -43,7 +43,7 @@ function handleToggle() {
 
 function handleExpand() {
   if (hasChildren.value) {
-    emit('toggleExpand', props.node.id)
+    emit('toggleExpand', props.node.uuid)
   }
 }
 </script>
@@ -81,7 +81,7 @@ function handleExpand() {
     <ul v-if="hasChildren && expanded" class="ptree-children">
       <PermissionTreeNode
         v-for="child in node.children"
-        :key="child.id"
+        :key="child.uuid"
         :node="child"
         :expanded-ids="expandedIds"
         @toggle="emit('toggle', $event)"

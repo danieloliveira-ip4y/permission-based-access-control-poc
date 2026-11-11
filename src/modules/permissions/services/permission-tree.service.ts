@@ -17,7 +17,7 @@ export function cloneTree(nodes: readonly PermissionNode[]): PermissionNode[] {
 
 export function nodePermissionKey(node: PermissionNode): Permission {
   if (!node.key) {
-    throw new Error(`Permissão "${node.description}" (id ${node.id}) não tem chave`)
+    throw new Error(`Permissão "${node.description}" (uuid ${node.uuid}) não tem chave`)
   }
 
   return node.key
@@ -98,13 +98,16 @@ export function applyGrantedKeys(nodes: PermissionNode[], granted: ReadonlySet<P
 export function toSavePayload(nodes: readonly PermissionNode[]): PermissionNode[] {
   return nodes.map((node) => {
     const payload: PermissionNode = {
-      id: node.id,
+      uuid: node.uuid,
       description: node.description,
       children: toSavePayload(node.children),
     }
 
     if (isAssignable(node)) {
       payload.assigned = node.assigned === true
+      payload.isCritial = node.isCritial === true
+      payload.isVisible = node.isVisible === true
+      payload.isDefault = node.isDefault === true
     }
 
     return payload

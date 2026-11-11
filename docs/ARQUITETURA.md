@@ -194,16 +194,16 @@ Contrato compartilhado. Nada de Vue.
 | Tipo | Papel |
 | --- | --- |
 | `PERMISSIONS` | `as const` em `catalog/permissions.ts` — todas as chaves `recurso.acao` |
-| `Permission` | união desses literais (`users.view`, `pix.approve`, …). Typo não compila |
+| `Permission` | união desses literais (`users.view`, `financeiras.list`, …). Typo não compila |
 | `isPermission` / `retainKnownPermissions` | filtro em runtime (Store descarta chave desconhecida do payload) |
 | `PermissionMode` | `'all'` (precisa de todas) ou `'any'` (basta uma) |
 | `UserProfile` | `'admin' \| 'operator' \| 'viewer'` — só existe na PoC (Proof of Concept) para alternar personas |
 | `PermissionsResponse` | `{ permissions: Permission[] }` — payload de `GET /api/me/permissions` |
 | `PermissionDirectiveValue` | string, array, ou `{ permissions, mode }` |
-| `PermissionNode` | nó do catálogo Laravel: `id`, `description`, `assigned?`, `children`, `key?` |
+| `PermissionNode` | nó do catálogo Laravel: `uuid`, `description`, `assigned?`, `isCritial?`, `isVisible?`, `isDefault?`, `children`, `key?` |
 | `PermissionCheckState` | `'checked' \| 'unchecked' \| 'indeterminate'` na árvore |
 
-Nó **grantable**: tem `assigned: boolean` e **obrigatoriamente** `key`. Nó **grupo**: não tem `assigned`; só organiza filhos. `key` ausente em nó grantable é erro (`nodePermissionKey` lança). Não existe fallback `permission:{id}`.
+Nó **grantable**: tem `assigned: boolean` e **obrigatoriamente** `key`. Nó **grupo**: não tem `assigned`; só organiza filhos. `key` ausente em nó grantable é erro (`nodePermissionKey` lança). Não existe fallback por `uuid`.
 
 `RouteMeta` em `src/types/vue-router.d.ts` adiciona `requiresAuth`, `permissions` e `permissionMode` às rotas.
 
@@ -288,11 +288,11 @@ Lista default por perfil. Também documenta o JSON de `GET /api/me/permissions` 
 
 **`permission-tree.mock.ts`**
 
-Catálogo hierárquico (Sistema ids 100+, PIX ids 1–21) + `Map<userId, tree>` em memória.
+Catálogo hierárquico (Antecipação Salarial, nós por `uuid`) + `Map<userId, tree>` em memória.
 
 | Função | Papel |
 | --- | --- |
-| `buildDefaultPermissionTree(profile)` | clona o catálogo, marca `assigned` pelas chaves do perfil; em não-admin, zera o ramo PIX |
+| `buildDefaultPermissionTree(profile)` | clona o catálogo e marca `assigned` pelas chaves do perfil |
 | `getUserPermissionTree` | devolve o Map se já salvou; senão o default |
 | `persistUserPermissionTree` | clona, grava no Map, devolve `{ permissions: chaves marcadas }` |
 | `resetPermissionAssignments` | limpa o Map (testes) |
@@ -450,7 +450,7 @@ Quem usa `v-can`: `AppSidebar.vue`, `Users.vue`, `Reports.vue`, `Settings.vue`, 
 | `setAssignedCascade` | marca o nó e todos os descendentes grantable |
 | `toggleNode` | se não está fully-checked → marca tudo; senão desmarca |
 | `applyGrantedKeys` | `assigned = granted.has(key)` em todo nó com `key` |
-| `toSavePayload` | `{ id, description, assigned?, children }` — sem `key` (formato Laravel) |
+| `toSavePayload` | `{ uuid, description, assigned?, isCritial?, isVisible?, isDefault?, children }` — sem `key` (formato Laravel) |
 
 Grupo sem `assigned` não entra no payload como permissão. Folha (ou qualquer grantable) entra com `assigned: true/false`.
 
@@ -506,7 +506,7 @@ O Debugger avisa: *“O trace sai no console.”* Não há UI de log.
 | `Permissions.vue` | exige rota `permissions.manage`; carrega árvore; `toggleNode`; `saveAssignedPermissions` |
 | `PermissionTree` / `PermissionTreeNode` | checkbox com cascade e estado indeterminado; não avalia `can()` |
 | `Users.vue` | `v-can` nas ações; hook só para o fallback “Somente leitura”; link Permissões leva `?userId=` |
-| `Dashboard.vue` | lista o array (inspeção) + `v-can` nas ações PIX |
+| `Dashboard.vue` | lista o array (inspeção) + `v-can` nas ações de Antecipação |
 | `Reports.vue` / `Settings.vue` | `v-can` no botão de exportar / editar |
 | `Forbidden.vue` | página pública do 403; botão “Voltar ao dashboard” (o Guard decide se o dashboard abre) |
 | `App.vue` | shell autenticado; debugger sempre visível para trocar o perfil mesmo no 403 |
@@ -515,41 +515,33 @@ O Debugger avisa: *“O trace sai no console.”* Não há UI de log.
 
 ## 5. Catálogo e chaves
 
-Toda permissão grantable tem `key` explícita `recurso.acao`. Grupos (Sistema, PIX, Usuários, Receber, …) não têm `key` nem `assigned`.
+Toda permissão grantable tem `key` explícita `recurso.acao`. Grupos (Antecipação Salarial, Financeira, …) não têm `key` nem `assigned`.
 
-### 5.1 Sistema
+As chaves de demo de tela (`dashboard.view`, `users.*`, …) continuam no `PERMISSIONS` / `permissionsByProfile` para rotas e `v-can` das páginas de exemplo. O retorno da árvore é o catálogo de Antecipação.
 
-| id | Descrição | key |
+### 5.1 Antecipação Salarial (árvore)
+
+| uuid (sufixo) | Descrição | key |
 | --- | --- | --- |
-| 101 | Dashboard | `dashboard.view` |
-| 103–106 | Usuários ver/criar/editar/excluir | `users.view` `users.create` `users.update` `users.delete` |
-| 108–109 | Relatórios ver/exportar | `reports.view` `reports.export` |
-| 111–112 | Configurações ver/editar | `settings.view` `settings.update` |
-| 114 | Gerenciar atribuições | `permissions.manage` |
+| `…f52a` | Listar Financeiras | `financeiras.list` |
+| `…f53a` | Adicionar Financeiras | `financeiras.create` |
+| `…f54a` | Atualizar Comissão | `financeiras.commission.update` |
+| `…f56a` | Definir Conta Movimento | `financeiras.account.movement.set` |
+| `…f57a` | Definir Conta Desembolso | `financeiras.account.disbursement.set` |
+| `…f58a` | Definir Limites Automáticos | `financeiras.limits.auto.set` |
+| `…f59a` | Procurar Financeira | `financeiras.search` |
+| `…f5aa` | Listar Modalidade | `modalidades.list` |
+| `…f5ba` | Analisar Antecipação (exemplo) | `antecipacao.analyze` |
 
-### 5.2 PIX
+Dashboard demonstra um subconjunto: `financeiras.list`, `financeiras.create`, `financeiras.search`, `modalidades.list`, `antecipacao.analyze`.
 
-| id | Descrição | key |
+### 5.2 Defaults por perfil
+
+| Perfil | Demo (rotas/UI) | Árvore Antecipação |
 | --- | --- | --- |
-| 2 | Incluir | `pix.create` |
-| 3 | Aprovar | `pix.approve` |
-| 5 | Incluir Cobrança Pix | `pix.charge.create` |
-| 6 | Cancelar Cobrança Pix | `pix.charge.cancel` |
-| 8 | Comprovante visualizar | `pix.receipt.view` |
-| 10 | PDV visualizar | `pix.pos.view` |
-| 11–14 | PDV criar/excluir/qrcode/movimentação | `pix.pos.create` `pix.pos.delete` `pix.pos.qrcode.download` `pix.pos.movement.view` |
-| 16–18 | WhatsApp ver/cadastrar/excluir | `pix.whatsapp.view` `pix.whatsapp.create` `pix.whatsapp.delete` |
-| 19–21 | E-mail ver/cadastrar/excluir | `pix.email.view` `pix.email.create` `pix.email.delete` |
-
-Dashboard demonstra um subconjunto: `pix.create`, `pix.approve`, `pix.charge.create`, `pix.charge.cancel`, `pix.pos.view`.
-
-### 5.3 Defaults por perfil
-
-| Perfil | Sistema | PIX |
-| --- | --- | --- |
-| Administrador | dashboard, users.*, reports.*, settings.*, `permissions.manage` | `pix.approve`, `pix.charge.create`, `pix.pos.view` |
-| Operador | `dashboard.view`, `users.view`, `users.create`, `reports.view` | nenhum |
-| Visualizador | `dashboard.view`, `reports.view` | nenhum |
+| Administrador | dashboard, users.*, reports.*, settings.*, `permissions.manage` | todas as chaves da árvore |
+| Operador | `dashboard.view`, `users.view`, `users.create`, `reports.view` | `financeiras.list` |
+| Visualizador | `dashboard.view`, `reports.view` | nenhuma |
 
 Depois do primeiro **Salvar permissões** para um `userId`, o Map substitui esse default até recarregar a página.
 
@@ -695,7 +687,7 @@ Ações *dentro* da página (não são rota):
 | Abrir atribuição | `permissions.manage` | `v-can` no link Permissões |
 | Exportar relatório | `reports.export` | `v-can` em `Reports.vue` |
 | Editar configurações | `settings.update` | `v-can` em `Settings.vue` |
-| Incluir / aprovar PIX, cobrança, PDV | `pix.*` | `v-can` em `Dashboard.vue` |
+| Listar/adicionar financeira, analisar | `financeiras.*` / `antecipacao.analyze` | `v-can` em `Dashboard.vue` |
 
 Menu da sidebar: as mesmas chaves de rota, cada uma com `v-can`. `/users/delete-example` só tem Guard na rota (`users.delete`); os botões da página não repetem a diretiva.
 
@@ -776,7 +768,7 @@ GET /api/me/permissions
 ```
 
 ```json
-{ "permissions": ["users.view", "users.create", "pix.approve"] }
+{ "permissions": ["users.view", "users.create", "financeiras.list"] }
 ```
 
 ```http
@@ -787,11 +779,24 @@ PUT /api/users/:id/permissions
 ```json
 [
   {
-    "id": 1,
-    "description": "PIX",
+    "uuid": "6e2970c2-8f5b-431f-a101-63f58767f55a",
+    "description": "Antecipação Salarial",
     "children": [
-      { "id": 2, "description": "Incluir", "assigned": false, "children": [] },
-      { "id": 3, "description": "Aprovar", "assigned": true, "children": [] }
+      {
+        "uuid": "6e2970c2-8f5b-431f-a101-63f58767f51a",
+        "description": "Financeira",
+        "children": [
+          {
+            "uuid": "6e2970c2-8f5b-431f-a101-63f58767f52a",
+            "description": "Listar Financeiras",
+            "assigned": true,
+            "isCritial": false,
+            "isVisible": false,
+            "isDefault": false,
+            "children": []
+          }
+        ]
+      }
     ]
   }
 ]
@@ -824,7 +829,7 @@ Caminho manual:
 1. Abrir deslogado → `/login`. Console ainda sem sessão.
 2. Entrar como **Administrador** → sidebar completa; no console, `[Auth] login` → `[Store] load.*` → `[Guard] evaluate.*`.
 3. Usuários: criar/editar/excluir visíveis. **Excluir usuários** abre `/users/delete-example`.
-4. Permissões: marcar um PIX extra, salvar para o Administrador → botão aparece no Dashboard na hora.
+4. Permissões: marcar uma permissão de Antecipação, salvar para o Administrador → botão aparece no Dashboard na hora.
 5. Debugger → **Operador**: some Configurações, Permissões, Editar, Excluir; **Criar** permanece.
 6. Debugger → **Visualizador** estando em `/users` → `/403`. Botão “Voltar ao dashboard” no tamanho normal. Consultas com badges `true`/`false` alinhados à direita.
 7. Relatórios como visualizador → sem Exportar.
