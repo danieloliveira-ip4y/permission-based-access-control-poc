@@ -25,6 +25,8 @@ O Laravel continua sendo a fonte definitiva (Gates, Policies, Middleware). O fro
 11. [Como validar](#11-como-validar)
 12. [Repositório](#12-repositório)
 
+Aplicação na Agência (o que aplicar, o que não, e o substituto do Route Guard): [`docs/APLICACAO-AGENCIA.md`](./APLICACAO-AGENCIA.md).
+
 ---
 
 ## 1. O que o sistema responde
