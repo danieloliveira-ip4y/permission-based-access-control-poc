@@ -18,7 +18,7 @@ Regra de ouro (PoC e harness da Agência):
 | Sessão | Auth Store mock | Sessão Laravel + proxy |
 | Autorização | Mock + ideia de Gates no Laravel | Microserviço (`ENDPOINT_TO_BACK`) |
 | Navegação | Rotas client-side + `beforeEach` | Rotas Laravel → blade → tag Vue |
-| Admin de permissão | Árvore Vue | Dual-list jQuery (legado; fora do escopo) + **PoC Vue** `ManagePermissionsModal` em `/matriz/poc-permissoes` |
+| Admin de permissão | Árvore Vue | Dual-list jQuery (legado) + **PoC Vue** `ManagePermissionsModal` no cadastro de usuário (`/matriz/configuracoes/usuario/cadastro`) |
 | Módulo novo | N/A | Rule `12-new-module-layers.md` |
 
 ### Status da PoC na Agência (revisão — 2ª passagem)
@@ -26,13 +26,13 @@ Regra de ouro (PoC e harness da Agência):
 | Item do plano | Status | Onde / evidência |
 |---|---|---|
 | `PermissionService` / Store / `v-can` / boot load | **Feito** | `modules/permissions/` + `app.directive('can')` + load no boot |
-| `usePermission` / `PermissionPage` / `usePagePermissionGuard` | **Feito no núcleo; não consumido na landing** | APIs exportadas; `Dashboard.vue` só usa store + `v-can` |
+| `usePermission` / `PermissionPage` / `usePagePermissionGuard` | **Feito no núcleo; não consumido na tela real** | APIs exportadas; cadastro abre o modal sem Page Guard |
 | Catálogo tipado `PERMISSIONS` | **Feito (PoC)** | Só `poc.permissions.*` — não espelha catálogo de produto |
-| Módulo Vue 4 camadas | **Parcial** | Scaffold `DemoResource*` + use case existe, **mas a landing não usa**; UX real = modal de catálogo |
-| Rota + blade + menu | **Feito** | `/matriz/poc-permissoes` |
-| Tela admin em árvore (UX) | **Feito (PoC)** | `ManagePermissionsModal` + `CatalogTreeNode` + `permissionTree.ts` |
+| Módulo Vue 4 camadas | **Parcial** | Scaffold `DemoResource*` órfão; UX real = modal de catálogo |
+| Tela admin em árvore (UX) | **Feito (PoC)** | `ManagePermissionsModal` + launcher no cadastro de usuário |
+| Tela demo `/matriz/poc-permissoes` | **Removida** | Menu/rota/blade/Dashboard PoC retirados |
 | Shape do nó vs contrato PoC | **Parcial** | Agência: `uuid`, `description`, `assigned?`, `children`. **Faltam** `key`, `isCritial`, `isVisible`, `isDefault` |
-| Page Guard na landing | **Não ligado** | Sem `PermissionPage` / `usePagePermissionGuard` na page |
+| Page Guard na tela de cadastro | **Não ligado** | Modal PoC abre via bridge jQuery → Vue; sem Page Guard |
 | `permission.client` → microserviço | **Não** | Ainda `fetchMockCurrentUserPermissions` (+ personas mock `full`/`limited`/`none`) |
 | Gateway/proxy do catálogo (list/save) | **Não** | Save do modal é local (`emit` + `showMessage` mock) |
 | Proxy `/api/permission*` existente | **Outro domínio** | Rotas Laravel de permission existem, mas **não** alimentam o Store de chaves do usuário logado |
@@ -196,7 +196,7 @@ Opcional — wrapper declarativo (equivalente leve ao `meta.permissions`):
 </permission-page>
 ```
 
-Implementação de referência na Agência: módulo `resources/js/modules/permissions/` + tela PoC em `resources/js/modules/permissionPoc/` (`/matriz/poc-permissoes`).
+Implementação de referência na Agência: módulo `resources/js/modules/permissions/` + modal PoC em `resources/js/modules/permissionPoc/` (aberto no cadastro de usuário).
 
 Por dentro, o wrapper só chama `usePagePermissionGuard`. A page filha não precisa repetir o boilerplate.
 
@@ -241,8 +241,8 @@ Isso é complemento, não substituto do Page Guard: páginas Vue novas ainda usa
 | permission.client | Gateway + proxy | **Feito (mock)** — falta HTTP real |
 | Catálogo `PERMISSIONS` | Tipagem front | **Feito (chaves PoC)** — falta `key` no nó de árvore |
 | `usePermission` | Hook | **Feito** — ainda sem uso nas pages |
-| `v-can` | `app.directive` | **Feito** (usado na landing) |
-| Route Guard | **Page Guard** + middleware Laravel | **Adaptado no núcleo** — landing ainda não consome |
+| `v-can` | `app.directive` | **Feito** (núcleo; sem uso na tela de cadastro legada) |
+| Route Guard | **Page Guard** + middleware Laravel | **Adaptado no núcleo** — cadastro ainda não consome |
 | Tree Service / Tree UI | Tela admin Vue **nova** | **PoC UX feita** em `permissionPoc`; shape incompleta vs PoC; sem persistência |
 | Debugger | — | Não aplicar (há só personas no mock do client) |
 
@@ -252,17 +252,16 @@ Isso é complemento, não substituto do Page Guard: páginas Vue novas ainda usa
 
 1. **Contrato** no microserviço: chaves do usuário logado (+ árvore se admin Vue vier em seguida). ← pendente
 2. **Núcleo** no front: Service, Store, client/gateway, `usePermission`, `v-can`, `usePagePermissionGuard`. ← **feito** (client mock)
-3. **Primeiro módulo Vue novo** consome Page Guard + `v-can` (não plugar legado). ← **parcial** (`v-can` ok; Page Guard/hooks não ligados; scaffold DemoResource órfão)
-4. **Tela admin em árvore** (opcional, tela nova completa). ← **PoC UX feita**; falta shape completo + gateway/proxy
+3. **Primeiro consumo em tela real** (cadastro de usuário). ← **parcial** (modal PoC no botão Permissões; dual-list legado ainda no DOM; Page Guard não ligado)
+4. **Tela admin em árvore** (opcional, tela nova completa). ← **PoC UX no cadastro**; falta shape completo + gateway/proxy
 5. **Menu Blade** filtrado (opcional, fase posterior). ← pendente
 
 Próximos passos recomendados (código):
 
-1. Envolver a landing PoC com `PermissionPage` / `usePagePermissionGuard` (`poc.permissions.view`).
-2. Trocar `permission.client` mock por GET real via proxy quando o endpoint existir.
-3. Alinhar `CatalogPermissionNode` ao contrato PoC (`key`, flags) e expor gateway list/save; reduzir mock triplicado.
-4. Remover ou religar o scaffold `DemoResource*` à demo de Page Guard.
-5. Se a árvore for produto: mover `permissionTree` (+ tipos) para `modules/permissions/`.
+1. Trocar `permission.client` mock por GET real via proxy quando o endpoint existir.
+2. Alinhar `CatalogPermissionNode` ao contrato PoC (`key`, flags) e expor gateway list/save; reduzir mock triplicado.
+3. Remover dual-list legado / scaffold `DemoResource*` quando a PoC virar produto.
+4. Se a árvore for produto: mover `permissionTree` (+ tipos) para `modules/permissions/`.
 
 ---
 
@@ -271,4 +270,4 @@ Próximos passos recomendados (código):
 - PoC: `docs/ARQUITETURA.md`
 - Agência: `.harness/rules/10-architecture.md`, `11-follow-the-screen.md`, `12-new-module-layers.md`, `15-http-proxy.md`
 - Skill de tela nova: `.harness/skills/new-screen/SKILL.md`
-- Implementação Agência: `resources/js/modules/permissions/`, `resources/js/modules/permissionPoc/`, rota `/matriz/poc-permissoes`
+- Implementação Agência: `resources/js/modules/permissions/`, `resources/js/modules/permissionPoc/` (modal no cadastro de usuário)
